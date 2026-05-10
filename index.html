@@ -649,48 +649,16 @@ html, body {
   const iconPlay = btn.querySelector('.music-icon-play');
   const iconOn   = btn.querySelector('.music-icon-playing');
   const iconOff  = btn.querySelector('.music-icon-paused');
-  let fadeTimer = null;
-  const FADE_STEP = 0.05;   // 每次音量变化步长
-  const FADE_MS   = 50;     // 每次变化间隔(ms)，50ms×20步=1秒淡入/淡出
 
-  // 设置音频初始音量
+  let fadeTimer = null;
+  const FADE_STEP = 0.05;
+  const FADE_MS   = 50;
+  let isFadingIn  = false;
+  let isFadingOut = false;
+
   audio.volume = 0;
 
-  function fadeIn() {
-    clearInterval(fadeTimer);
-    // 先确保能播放
-    const promise = audio.play();
-    if (promise !== undefined) {
-      promise.catch(() => {
-        // 浏览器阻止自动播放，停止渐入并重置 UI
-        clearInterval(fadeTimer);
-        audio.volume = 0;
-        btn.classList.remove('playing');
-        btn.classList.add('music-paused');
-      });
-    }
-    fadeTimer = setInterval(() => {
-      if (audio.volume < 1) {
-        audio.volume = Math.min(1, +(audio.volume + FADE_STEP).toFixed(2));
-      } else {
-        clearInterval(fadeTimer);
-      }
-    }, FADE_MS);
-  }
-
-  function fadeOut(onEnd) {
-    clearInterval(fadeTimer);
-    fadeTimer = setInterval(() => {
-      if (audio.volume > 0) {
-        audio.volume = Math.max(0, +(audio.volume - FADE_STEP).toFixed(2));
-      } else {
-        clearInterval(fadeTimer);
-        audio.pause();
-        if (onEnd) onEnd();
-      }
-    }, FADE_MS);
-  }
-
+  // 统一更新按钮 UI
   function updateBtnUI(playing) {
     btn.classList.toggle('playing', playing);
     btn.classList.toggle('music-paused', !playing);
@@ -699,39 +667,84 @@ html, body {
     iconOff.style.display  = !playing ? 'inline' : 'none';
   }
 
-  // 按钮点击切换
-  btn.addEventListener('click', () => {
-    if (audio.volume > 0 && !audio.paused) {
-      // 正在播放 → 淡出暂停
-      fadeOut(() => updateBtnUI(false));
+  function fadeIn() {
+    if (isFadingIn) return;
+    isFadingIn  = true;
+    isFadingOut = false;
+    clearInterval(fadeTimer);
+
+    const promise = audio.play();
+    if (promise) {
+      promise.catch(() => {
+        // 自动播放被阻止，等用户交互
+        clearInterval(fadeTimer);
+        audio.volume = 0;
+        isFadingIn = false;
+      });
+    }
+
+    fadeTimer = setInterval(() => {
+      if (audio.volume < 1) {
+        audio.volume = Math.min(1, +(audio.volume + FADE_STEP).toFixed(2));
+      } else {
+        clearInterval(fadeTimer);
+        isFadingIn = false;
+      }
+    }, FADE_MS);
+  }
+
+  function fadeOut() {
+    if (isFadingOut) return;
+    isFadingOut = true;
+    isFadingIn  = false;
+    clearInterval(fadeTimer);
+
+    fadeTimer = setInterval(() => {
+      if (audio.volume > 0) {
+        audio.volume = Math.max(0, +(audio.volume - FADE_STEP).toFixed(2));
+      } else {
+        clearInterval(fadeTimer);
+        audio.pause();
+        isFadingOut = false;
+        updateBtnUI(false);
+      }
+    }, FADE_MS);
+  }
+
+  // 按钮点击：切换播放/暂停（stopPropagation 防止与 document 监听冲突）
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!audio.paused && audio.volume > 0) {
+      fadeOut();
     } else {
-      // 暂停/未开始 → 淡入播放
       fadeIn();
-      // UI 由 play 事件回调更新，此处不立即更新
     }
   });
 
-  // 开屏结束后尝试自动播放（淡入）
-  setTimeout(() => {
-    fadeIn();
-  }, 3200);
-
-  // 首次用户交互时尝试播放（解决浏览器自动播放策略）
-  function tryPlayOnGesture() {
-    if (audio.volume > 0 && !audio.paused) return; // 已经在播放
-    fadeIn();
-    document.removeEventListener('click', tryPlayOnGesture);
-    document.removeEventListener('touchstart', tryPlayOnGesture);
-  }
-  document.addEventListener('click', tryPlayOnGesture);
-  document.addEventListener('touchstart', tryPlayOnGesture);
-
-  // 播放成功：更新 UI
-  audio.addEventListener('play',  () => updateBtnUI(true));
-  // 播放失败或被暂停：更新 UI
+  // 播放/暂停事件：同步 UI
+  audio.addEventListener('play',  () => { updateBtnUI(true);  isFadingIn = false; });
   audio.addEventListener('pause', () => {
-    if (audio.volume === 0) updateBtnUI(false);
+    if (audio.volume === 0) { updateBtnUI(false); isFadingOut = false; }
   });
+
+  // 开屏结束后自动尝试播放
+  setTimeout(() => fadeIn(), 3200);
+
+  // 首次用户在页面任意位置点击时尝试启动音乐（解决浏览器自动播放策略）
+  function firstGesturePlay() {
+    if (!audio.paused && audio.volume > 0) {
+      // 已经在播放，移除监听即可
+      document.removeEventListener('click', firstGesturePlay);
+      document.removeEventListener('touchstart', firstGesturePlay);
+      return;
+    }
+    fadeIn();
+    document.removeEventListener('click', firstGesturePlay);
+    document.removeEventListener('touchstart', firstGesturePlay);
+  }
+  document.addEventListener('click', firstGesturePlay);
+  document.addEventListener('touchstart', firstGesturePlay);
 })();
 
 /* ──────────────────────────────────────────
