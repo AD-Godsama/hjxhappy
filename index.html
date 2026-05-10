@@ -89,15 +89,80 @@ html, body {
 }
 
 /* ================================================================
+   Splash Screen — 开屏动画
+================================================================ */
+.splash-screen {
+  position: fixed; inset: 0; z-index: 99999;
+  background: linear-gradient(160deg, #fff0f5 0%, #ffd6e7 40%, #ffc2d6 100%);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 24px;
+  transition: opacity .8s ease, visibility .8s;
+}
+.splash-screen.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.splash-text {
+  font-size: clamp(2.8rem, 9vw, 6.5rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, #e8005a, #ff6b9d, #ff8fab, #c2185b, #e8005a);
+  background-size: 300% 300%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: splashFloat 1.8s ease-in-out infinite, splashShimmer 3s linear infinite;
+  letter-spacing: clamp(4px, 1.2vw, 12px);
+  filter: drop-shadow(0 4px 24px rgba(232,0,90,.35));
+  text-align: center;
+  line-height: 1.3;
+}
+@keyframes splashFloat {
+  0%, 100% { transform: translateY(0); }
+  50%        { transform: translateY(-18px); }
+}
+@keyframes splashShimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.splash-sub {
+  font-size: clamp(.9rem, 2.5vw, 1.3rem);
+  color: #c8648c;
+  letter-spacing: 3px;
+  opacity: 0;
+  animation: splashFadeIn .8s ease .5s forwards, splashFloat .8s ease-in-out .5s infinite;
+}
+@keyframes splashFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: .8; transform: translateY(0); }
+}
+.splash-flowers {
+  position: absolute; inset: 0;
+  pointer-events: none; overflow: hidden;
+}
+.splash-flower {
+  position: absolute;
+  font-size: 2.2rem;
+  opacity: 0;
+  animation: splashPetalFloat 3s ease-in-out forwards;
+}
+@keyframes splashPetalFloat {
+  0%   { opacity:0; transform: translateY(40px) rotate(0deg) scale(.6); }
+  20%  { opacity:.8; }
+  80%  { opacity:.7; }
+  100% { opacity:0; transform: translateY(-110vh) rotate(360deg) scale(1.1); }
+}
+
+/* ================================================================
    PAGE 1 — Hero
 ================================================================ */
 #page-hero {
   justify-content: center;
 }
 .hero-icon {
-  font-size: clamp(4rem, 12vw, 7rem);
-  display: block; margin-bottom: 12px;
-  filter: drop-shadow(0 4px 16px rgba(255,100,150,.55));
+  font-size: clamp(5rem, 16vw, 9rem);
+  display: block; margin-bottom: 14px;
+  filter: drop-shadow(0 6px 22px rgba(255,100,150,.6));
   animation: pulse 2.6s ease-in-out infinite;
 }
 @keyframes pulse {
@@ -386,6 +451,60 @@ html, body {
 }
 
 /* ================================================================
+   音乐控制按钮
+================================================================ */
+.music-btn {
+  position: fixed;
+  top: 16px; right: 16px;
+  z-index: 10001;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(232,0,90,.35);
+  background: rgba(255,255,255,.88);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 18px rgba(220,50,100,.18);
+  transition: transform .2s, box-shadow .2s, background .2s;
+  padding: 0;
+  line-height: 1;
+}
+.music-btn:hover {
+  transform: scale(1.12);
+  box-shadow: 0 6px 26px rgba(220,50,100,.3);
+  background: rgba(255,240,245,.95);
+}
+.music-btn.playing .music-icon-playing {
+  display: inline-block !important;
+}
+.music-btn.playing .music-icon-play,
+.music-btn.playing .music-icon-paused {
+  display: none !important;
+}
+.music-btn.music-paused .music-icon-paused {
+  display: inline-block !important;
+}
+.music-btn.music-paused .music-icon-play,
+.music-btn.music-paused .music-icon-playing {
+  display: none !important;
+}
+/* 播放中旋转动画 */
+.music-btn.playing {
+  animation: musicSpin 3s linear infinite;
+}
+@keyframes musicSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.music-btn.playing:hover {
+  animation: musicSpin 3s linear infinite, hoverScale .2s;
+}
+@keyframes hoverScale {
+  to { transform: rotate(360deg) scale(1.12); }
+}
+
+/* ================================================================
    响应式 极小屏
 ================================================================ */
 @media (max-width: 360px) {
@@ -396,6 +515,25 @@ html, body {
   </style>
 </head>
 <body>
+
+<!-- ==================== 开屏动画 ==================== -->
+<div class="splash-screen" id="splashScreen">
+  <div class="splash-flowers" id="splashFlowers"></div>
+  <div class="splash-text">母亲节快乐</div>
+  <div class="splash-sub">Happy Mother's Day &nbsp;·&nbsp; 2026.05.10</div>
+</div>
+
+<!-- 背景音乐 -->
+<audio id="bgMusic" loop preload="auto">
+  <source src="music/music.mp3" type="audio/mpeg">
+</audio>
+
+<!-- 音乐控制按钮 -->
+<button class="music-btn" id="musicBtn" title="播放音乐">
+  <span class="music-icon-play">🔇</span>
+  <span class="music-icon-playing" style="display:none;">🎵</span>
+  <span class="music-icon-paused" style="display:none;">🔈</span>
+</button>
 
 <!-- 花朵背景 -->
 <div class="flower-bg" id="flowerBg"></div>
@@ -462,6 +600,130 @@ html, body {
 
 <!-- ==================== JavaScript ==================== -->
 <script>
+/* ──────────────────────────────────────────
+   0. 开屏动画
+───────────────────────────────────────────── */
+(function() {
+  const splash = document.getElementById('splashScreen');
+  const flowers = ['🌸','🌺','🌷','💮','🌼','🪷','🌹','✨'];
+  const container = document.getElementById('splashFlowers');
+
+  // 生成飘落花瓣
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('span');
+    el.className = 'splash-flower';
+    el.textContent = flowers[Math.floor(Math.random() * flowers.length)];
+    el.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${60+Math.random()*50}%;
+      font-size:${1.6+Math.random()*1.8}rem;
+      animation-delay:${(Math.random()*2).toFixed(2)}s;
+      animation-duration:${(2.5+Math.random()*1.5).toFixed(2)}s;
+    `;
+    container.appendChild(el);
+  }
+
+  // 初始隐藏主页面
+  document.getElementById('page-hero').classList.remove('active');
+  document.getElementById('global-footer-text').classList.remove('show');
+
+  // 3秒后淡出开屏
+  setTimeout(() => {
+    splash.classList.add('hidden');
+    // 淡出动画结束后激活主页
+    setTimeout(() => {
+      splash.remove();
+      const hero = document.getElementById('page-hero');
+      hero.classList.add('active');
+      document.getElementById('global-footer-text').classList.add('show');
+    }, 900); // 等待 CSS transition 完成
+  }, 3000);
+})();
+
+/* ──────────────────────────────────────────
+   0.5 背景音乐控制（渐入渐出）
+───────────────────────────────────────────── */
+(function() {
+  const audio   = document.getElementById('bgMusic');
+  const btn     = document.getElementById('musicBtn');
+  const iconPlay = btn.querySelector('.music-icon-play');
+  const iconOn   = btn.querySelector('.music-icon-playing');
+  const iconOff  = btn.querySelector('.music-icon-paused');
+  let fadeTimer = null;
+  const FADE_STEP = 0.05;   // 每次音量变化步长
+  const FADE_MS   = 50;     // 每次变化间隔(ms)，50ms×20步=1秒淡入/淡出
+
+  // 设置音频初始音量
+  audio.volume = 0;
+
+  function fadeIn() {
+    clearInterval(fadeTimer);
+    // 先确保能播放
+    const promise = audio.play();
+    if (promise !== undefined) {
+      promise.catch(() => {
+        // 浏览器阻止自动播放，停止渐入并重置 UI
+        clearInterval(fadeTimer);
+        audio.volume = 0;
+        btn.classList.remove('playing');
+        btn.classList.add('music-paused');
+      });
+    }
+    fadeTimer = setInterval(() => {
+      if (audio.volume < 1) {
+        audio.volume = Math.min(1, +(audio.volume + FADE_STEP).toFixed(2));
+      } else {
+        clearInterval(fadeTimer);
+      }
+    }, FADE_MS);
+  }
+
+  function fadeOut(onEnd) {
+    clearInterval(fadeTimer);
+    fadeTimer = setInterval(() => {
+      if (audio.volume > 0) {
+        audio.volume = Math.max(0, +(audio.volume - FADE_STEP).toFixed(2));
+      } else {
+        clearInterval(fadeTimer);
+        audio.pause();
+        if (onEnd) onEnd();
+      }
+    }, FADE_MS);
+  }
+
+  function updateBtnUI(playing) {
+    btn.classList.toggle('playing', playing);
+    btn.classList.toggle('music-paused', !playing);
+    iconPlay.style.display = 'none';
+    iconOn.style.display   = playing ? 'inline' : 'none';
+    iconOff.style.display  = !playing ? 'inline' : 'none';
+  }
+
+  // 按钮点击切换
+  btn.addEventListener('click', () => {
+    if (audio.volume > 0 && !audio.paused) {
+      // 正在播放 → 淡出暂停
+      fadeOut(() => updateBtnUI(false));
+    } else {
+      // 暂停/未开始 → 淡入播放
+      fadeIn();
+      // UI 由 play 事件回调更新，此处不立即更新
+    }
+  });
+
+  // 开屏结束后尝试自动播放（淡入）
+  setTimeout(() => {
+    fadeIn();
+  }, 3200);
+
+  // 播放成功：更新 UI
+  audio.addEventListener('play',  () => updateBtnUI(true));
+  // 播放失败或被暂停：更新 UI
+  audio.addEventListener('pause', () => {
+    if (audio.volume === 0) updateBtnUI(false);
+  });
+})();
+
 /* ──────────────────────────────────────────
    1. 花朵浮动背景
 ───────────────────────────────────────────── */
