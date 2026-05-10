@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>母亲节快乐 💐</title>
+  <style>
+/* ================================================================
+   Reset & Variables
+================================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --pink-deep:   #e8005a;
+  --pink-mid:    #ff6b9d;
+  --pink-light:  #ff8fab;
+  --pink-pale:   #ffd6e7;
+  --pink-bg:     #fff0f5;
+  --text-dark:   #6b2c4e;
+  --nav-h:       68px;
+  --radius-lg:   24px;
+  --shadow-card: 0 8px 32px rgba(220,50,100,.13), 0 2px 8px rgba(0,0,0,.06);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;   /* 禁止整体滚动 */
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  background: linear-gradient(135deg, var(--pink-bg) 0%, #ffe4ec 45%, var(--pink-pale) 100%);
+}
+
+/* ================================================================
+   背景特效层（全局固定）
+================================================================ */
+#petalCanvas {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 1;
+}
+.flower-bg {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0; overflow: hidden;
+}
+.flower {
+  position: absolute; opacity: .18;
+  animation: floatFlower linear infinite;
+  user-select: none;
+}
+@keyframes floatFlower {
+  0%   { transform: translateY(110vh) rotate(0deg)   scale(.7);  opacity:0;   }
+  10%  { opacity: .22; }
+  90%  { opacity: .18; }
+  100% { transform: translateY(-15vh)  rotate(360deg) scale(1.1); opacity:0;  }
+}
+
+/* ================================================================
+   页面容器：每个 .page 都是全屏，默认隐藏
+================================================================ */
+.page {
+  position: fixed;
+  inset: 0;
+  bottom: var(--nav-h);          /* 避开底部导航 */
+  z-index: 10;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(24px, 5vw, 56px) clamp(14px, 5vw, 48px) clamp(20px, 3vw, 36px);
+  text-align: center;
+
+  /* 默认：右侧滑出隐藏 */
+  opacity: 0;
+  transform: translateX(60px);
+  pointer-events: none;
+  transition: opacity .38s cubic-bezier(.4,0,.2,1),
+              transform .38s cubic-bezier(.4,0,.2,1);
+}
+.page.active {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+/* 向左离场 */
+.page.leave-left {
+  opacity: 0;
+  transform: translateX(-60px);
+  pointer-events: none;
+}
+
+/* ================================================================
+   PAGE 1 — Hero
+================================================================ */
+#page-hero {
+  justify-content: center;
+}
+.hero-icon {
+  font-size: clamp(4rem, 12vw, 7rem);
+  display: block; margin-bottom: 12px;
+  filter: drop-shadow(0 4px 16px rgba(255,100,150,.55));
+  animation: pulse 2.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { transform: scale(1); }
+  50%      { transform: scale(1.1); }
+}
+.hero-title {
+  font-size: clamp(2rem, 6vw, 5rem);
+  font-weight: 900;
+  background: linear-gradient(90deg, #e8005a, #ff6b9d, #c2185b, #ff8fab);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: clamp(3px, .7vw, 8px);
+  line-height: 1.2;
+  animation: shimmer 3s linear infinite;
+  background-size: 200% auto;
+}
+@keyframes shimmer {
+  0%   { background-position: 0%   center; }
+  100% { background-position: 200% center; }
+}
+.hero-sub {
+  font-size: clamp(.9rem, 2.5vw, 1.3rem);
+  color: var(--pink-deep);
+  margin-top: 16px; letter-spacing: 2px; opacity: .85;
+}
+.heart-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: clamp(22px, 4vw, 36px);
+  padding: clamp(11px, 2vw, 16px) clamp(28px, 5vw, 50px);
+  background: linear-gradient(135deg, var(--pink-deep), var(--pink-mid));
+  color: #fff; border: none; border-radius: 50px;
+  font-size: clamp(.92rem, 2vw, 1.08rem); font-weight: 700;
+  letter-spacing: 2px; cursor: pointer;
+  box-shadow: 0 6px 28px rgba(232,0,90,.36);
+  transition: transform .2s, box-shadow .2s;
+}
+.heart-btn:hover { transform: scale(1.07); box-shadow: 0 10px 38px rgba(232,0,90,.5); }
+
+.heart-burst {
+  position: fixed; pointer-events: none; z-index: 9999;
+  font-size: 1.8rem;
+  animation: burstHeart 1.5s ease forwards;
+}
+@keyframes burstHeart {
+  0%   { opacity:1; transform:translate(0,0) scale(1); }
+  100% { opacity:0; transform:translate(var(--dx),var(--dy)) scale(.4); }
+}
+
+/* ================================================================
+   PAGE 2 — 祝福留言框
+================================================================ */
+#page-cards {
+  justify-content: flex-start;
+}
+.section-heading {
+  font-size: clamp(1.25rem, 3.5vw, 2rem);
+  color: var(--pink-deep); font-weight: 800;
+  letter-spacing: 3px;
+  margin-bottom: clamp(16px, 3vw, 30px);
+  position: relative; display: inline-block;
+  flex-shrink: 0;
+}
+.section-heading::after {
+  content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%);
+  width:56px; height:3px;
+  background: linear-gradient(90deg, var(--pink-deep), var(--pink-light));
+  border-radius: 2px;
+}
+
+/* 留言框容器 */
+.letter-wrap {
+  width: 100%; max-width: 780px;
+  position: relative;
+}
+.letter-box {
+  background: rgba(255,255,255,.82);
+  backdrop-filter: blur(18px);
+  border: 1.5px solid rgba(255,150,180,.4);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card), 0 0 0 6px rgba(255,200,220,.18);
+  padding: clamp(28px, 5vw, 48px) clamp(22px, 5vw, 52px);
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+/* 左侧装饰竖线 */
+.letter-box::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 5px;
+  background: linear-gradient(180deg, var(--pink-deep), var(--pink-light), var(--pink-pale));
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+/* 右上角大引号装饰 */
+.letter-box::after {
+  content: '❝';
+  position: absolute;
+  top: -6px; right: 18px;
+  font-size: 7rem;
+  color: rgba(255,150,180,.13);
+  font-family: Georgia, serif;
+  line-height: 1;
+  pointer-events: none;
+}
+.letter-to {
+  font-size: clamp(.88rem, 2vw, 1rem);
+  color: var(--pink-deep);
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 8px;
+}
+.letter-body {
+  font-size: clamp(.88rem, 2vw, 1.02rem);
+  color: var(--text-dark);
+  line-height: 2.05;
+  white-space: pre-line;
+}
+.letter-body p + p { margin-top: 1.1em; }
+.letter-sign {
+  margin-top: clamp(20px, 3vw, 32px);
+  text-align: right;
+  font-size: clamp(.85rem, 1.8vw, .98rem);
+  color: var(--pink-deep);
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.letter-sign span { display: block; line-height: 2; }
+/* 底部装饰花 */
+.letter-deco {
+  text-align: center;
+  margin-top: clamp(14px, 2.5vw, 22px);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  opacity: .75;
+  letter-spacing: 8px;
+}
+
+/* ================================================================
+   PAGE 3 — 相册
+================================================================ */
+#page-album {
+  justify-content: flex-start;
+}
+.slider-wrap {
+  position: relative; overflow: hidden; width: 100%; max-width: 960px;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 56px rgba(220,50,100,.18);
+  background: rgba(255,255,255,.6);
+  border: 2px solid rgba(255,150,180,.3);
+  flex-shrink: 0;
+}
+.slider-track {
+  display: flex;
+  transition: transform .7s cubic-bezier(.77,0,.18,1);
+}
+.slide {
+  flex: 0 0 100%; position: relative;
+  aspect-ratio: 16/9; overflow: hidden;
+}
+@media (max-width: 480px) { .slide { aspect-ratio: 4/3; } }
+.slide img { width:100%; height:100%; object-fit:cover; display:block; }
+.slide-placeholder {
+  width:100%; height:100%;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  background: linear-gradient(135deg, #ffe0ec, #ffc2d6);
+  color: var(--pink-deep); gap:14px;
+  font-size: clamp(.88rem, 2vw, 1.1rem);
+}
+.slide-placeholder .ph-icon { font-size: clamp(2.4rem, 6vw, 4rem); }
+.slide-caption {
+  position:absolute; bottom:0; left:0; right:0;
+  background: linear-gradient(0deg, rgba(180,10,80,.62) 0%, transparent 100%);
+  color:#fff;
+  padding: clamp(18px,3vw,32px) clamp(14px,2.5vw,22px) clamp(10px,2vw,18px);
+  font-size: clamp(.8rem, 1.8vw, 1rem);
+  letter-spacing:1px; text-align:left;
+}
+.slider-btn {
+  position:absolute; top:50%; transform:translateY(-50%);
+  background:rgba(255,255,255,.84); border:none; border-radius:50%;
+  width: clamp(34px,5vw,50px); height: clamp(34px,5vw,50px);
+  font-size: clamp(1.1rem,2.5vw,1.5rem);
+  color: var(--pink-deep); cursor:pointer; z-index:20;
+  box-shadow:0 4px 16px rgba(0,0,0,.14);
+  transition: background .2s, transform .2s;
+  display:flex; align-items:center; justify-content:center;
+}
+.slider-btn:hover { background:#fff; transform:translateY(-50%) scale(1.1); }
+.slider-btn.prev { left: clamp(8px,2vw,16px); }
+.slider-btn.next { right: clamp(8px,2vw,16px); }
+.dots {
+  display:flex; justify-content:center; gap:10px; margin-top:14px; flex-wrap:wrap;
+}
+.dot {
+  width:10px; height:10px; border-radius:50%;
+  background:rgba(200,100,140,.3); cursor:pointer;
+  transition: background .3s, transform .3s;
+  border:2px solid rgba(200,100,140,.4);
+}
+.dot.active { background: var(--pink-deep); transform:scale(1.3); }
+.album-hint {
+  margin-top:16px; font-size:clamp(.75rem,1.5vw,.86rem);
+  color:rgba(180,60,100,.7);
+  background:rgba(255,200,220,.36);
+  border-radius:12px; padding:9px 16px; display:inline-block;
+}
+
+/* ================================================================
+   底部导航状态栏
+================================================================ */
+.bottom-nav {
+  position: fixed; bottom:0; left:0; right:0;
+  height: var(--nav-h);
+  background: rgba(255,255,255,.9);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  border-top: 1.5px solid rgba(255,150,180,.35);
+  box-shadow: 0 -4px 24px rgba(220,50,100,.12);
+  display: flex; align-items: stretch;
+  z-index: 1000;
+}
+.nav-item {
+  flex: 1;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 4px;
+  cursor: pointer; border: none; background: transparent;
+  padding: 0 4px;
+  color: rgba(170,80,110,.5);
+  font-size: clamp(.58rem, 1.4vw, .72rem);
+  letter-spacing: .5px;
+  transition: color .22s, background .22s;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-item::before {
+  content:''; position:absolute; top:0; left:10%; right:10%; height:2.5px;
+  background: linear-gradient(90deg, var(--pink-deep), var(--pink-mid));
+  border-radius:0 0 3px 3px;
+  transform: scaleX(0);
+  transition: transform .28s cubic-bezier(.34,1.56,.64,1);
+}
+.nav-item.active { color: var(--pink-deep); background:rgba(255,130,180,.09); }
+.nav-item.active::before { transform: scaleX(1); }
+.nav-item:hover { color: var(--pink-deep); background:rgba(255,130,180,.06); }
+.nav-icon  { font-size: clamp(1.3rem, 3vw, 1.55rem); line-height:1; }
+.nav-label { font-weight: 600; white-space: nowrap; }
+
+/* ================================================================
+   页面入场动画
+================================================================ */
+@keyframes fadeInDown {
+  from { opacity:0; transform:translateY(-30px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes fadeInUp {
+  from { opacity:0; transform:translateY(30px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ================================================================
+   底部祝福文字（全局固定）
+================================================================ */
+#global-footer-text {
+  position: fixed;
+  bottom: calc(var(--nav-h) + 6px);
+  left: 0; right: 0;
+  z-index: 999;
+  text-align: center;
+  font-size: clamp(.72rem, 1.6vw, .88rem);
+  color: var(--pink-deep);
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .35s, transform .35s;
+  pointer-events: none;
+  text-shadow: 0 1px 6px rgba(255,240,245,.9);
+}
+#global-footer-text.show {
+  opacity: .85;
+  transform: translateY(0);
+}
+
+/* ================================================================
+   响应式 极小屏
+================================================================ */
+@media (max-width: 360px) {
+  .nav-label { display:none; }
+  .nav-icon  { font-size:1.5rem; }
+  :root { --nav-h: 56px; }
+}
+  </style>
+</head>
+<body>
+
+<!-- 花朵背景 -->
+<div class="flower-bg" id="flowerBg"></div>
+<!-- 花瓣画布 -->
+<canvas id="petalCanvas"></canvas>
+
+<!-- ==================== PAGE 1: 主页 ==================== -->
+<div class="page active" id="page-hero">
+  <span class="hero-icon">💐</span>
+  <h1 class="hero-title">永远美丽健康的菊香女士，母亲节快乐</h1>
+  <p class="hero-sub">Happy Mother's Day &nbsp;·&nbsp; 2026.05.10</p>
+  <button class="heart-btn" onclick="burstHearts(event)">
+    <span>💖</span><span>撒花！🌸</span>
+  </button>
+</div>
+
+<!-- ==================== PAGE 2: 祝福 ==================== -->
+<div class="page" id="page-cards">
+  <h2 class="section-heading">🌹 祝福</h2>
+  <div class="letter-wrap">
+    <div class="letter-box">
+      <div class="letter-to">💌 &nbsp;我滴妈：</div>
+      <div class="letter-body">
+<p>妈，今天母亲节，想跟你说一声：谢谢你这么多年的辛苦付出，谢谢你对我无尽的包容与爱护。你是我最坚实的依靠，也是我最温暖的港湾。愿你身体健健康康，每天开开心心，越活越年轻，越来越漂亮！妈妈，我爱你！</p>
+      </div>
+      <div class="letter-sign">
+        <span>陶一铭</span>
+        <span>2026 年 5 月 10 日 &nbsp;母亲节 🌹</span>
+      </div>
+    </div>
+    <div class="letter-deco">🌸 💝 🌷 💖 🌺</div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 3: 相册 ==================== -->
+<div class="page" id="page-album">
+  <h2 class="section-heading">📷 相册</h2>
+  <div class="slider-wrap" style="width:100%;max-width:960px;">
+    <div class="slider-track" id="sliderTrack"></div>
+    <button class="slider-btn prev" onclick="changeSlide(-1)">&#8249;</button>
+    <button class="slider-btn next" onclick="changeSlide(1)">&#8250;</button>
+  </div>
+  <div class="dots" id="dotContainer"></div>
+</div>
+
+<!-- ==================== 底部祝福文字（全局固定） ==================== -->
+<div id="global-footer-text">我的妈妈永远年轻漂亮！母亲节快乐！</div>
+
+<!-- ==================== 底部导航 ==================== -->
+<nav class="bottom-nav" id="bottomNav">
+  <button class="nav-item active" data-page="page-hero"   onclick="showPage('page-hero',   this)">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">主页</span>
+  </button>
+  <button class="nav-item"        data-page="page-cards"  onclick="showPage('page-cards',  this)">
+    <span class="nav-icon">🌹</span>
+    <span class="nav-label">祝福</span>
+  </button>
+  <button class="nav-item"        data-page="page-album"  onclick="showPage('page-album',  this)">
+    <span class="nav-icon">📷</span>
+    <span class="nav-label">相册</span>
+  </button>
+</nav>
+
+<!-- ==================== JavaScript ==================== -->
+<script>
+/* ──────────────────────────────────────────
+   1. 花朵浮动背景
+───────────────────────────────────────────── */
+(function() {
+  const container = document.getElementById('flowerBg');
+  const flowers = ['🌸','🌺','🌷','💮','🌼','🪷'];
+  const count   = window.innerWidth < 500 ? 12 : 22;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('span');
+    el.className   = 'flower';
+    el.textContent = flowers[i % flowers.length];
+    const size = 1.4 + Math.random() * 2;
+    el.style.cssText = `
+      left:${Math.random()*100}%;
+      font-size:${size}rem;
+      animation-duration:${10+Math.random()*18}s;
+      animation-delay:${-Math.random()*20}s;
+    `;
+    container.appendChild(el);
+  }
+})();
+
+/* ──────────────────────────────────────────
+   2. 花瓣飘落 Canvas
+───────────────────────────────────────────── */
+(function() {
+  const canvas = document.getElementById('petalCanvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H;
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const colors = [
+    'rgba(255,182,193,.75)','rgba(255,105,147,.6)','rgba(255,20,90,.5)',
+    'rgba(255,210,220,.65)','rgba(220,80,130,.5)','rgba(255,240,245,.7)',
+  ];
+  const N = window.innerWidth < 500 ? 30 : 60;
+
+  class Petal {
+    constructor() { this.reset(true); }
+    reset(init) {
+      this.x = Math.random() * W;
+      this.y = init ? Math.random() * H : -20;
+      this.r = 5 + Math.random() * 9;
+      this.vx = -.4 + Math.random() * .8;
+      this.vy = .7 + Math.random() * 1.5;
+      this.rot  = Math.random() * Math.PI * 2;
+      this.vrot = -.02 + Math.random() * .04;
+      this.color = colors[Math.floor(Math.random() * colors.length)];
+      this.sp = Math.random() * Math.PI * 2;
+      this.ss = .02 + Math.random() * .03;
+      this.alpha = .5 + Math.random() * .5;
+    }
+    update() {
+      this.sp += this.ss;
+      this.x  += this.vx + Math.sin(this.sp) * .7;
+      this.y  += this.vy;
+      this.rot += this.vrot;
+      if (this.y > H + 20) this.reset(false);
+    }
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rot);
+      ctx.globalAlpha = this.alpha;
+      ctx.fillStyle   = this.color;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, this.r, this.r * .55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  const petals = Array.from({length: N}, () => new Petal());
+  (function loop() {
+    ctx.clearRect(0, 0, W, H);
+    petals.forEach(p => { p.update(); p.draw(); });
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ──────────────────────────────────────────
+   3. 页面切换
+───────────────────────────────────────────── */
+const pageOrder = ['page-hero','page-cards','page-album'];
+let currentPage = 'page-hero';
+const footerText = document.getElementById('global-footer-text');
+
+window.showPage = function(id, btn) {
+  if (id === currentPage) return;
+
+  // 底部文字：仅主页显示
+  footerText.classList.toggle('show', id === 'page-hero');
+
+  const outEl = document.getElementById(currentPage);
+  const inEl  = document.getElementById(id);
+
+  // 确定方向
+  const outIdx = pageOrder.indexOf(currentPage);
+  const inIdx  = pageOrder.indexOf(id);
+  const goRight = inIdx > outIdx;
+
+  // 离场
+  outEl.classList.remove('active');
+  outEl.classList.add('leave-left');
+  // 预设新页进场方向
+  inEl.style.transform = goRight ? 'translateX(60px)' : 'translateX(-60px)';
+  inEl.style.opacity   = '0';
+  inEl.style.transition = 'none';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      inEl.style.transition = '';
+      inEl.classList.add('active');
+      inEl.style.transform = '';
+      inEl.style.opacity   = '';
+    });
+  });
+
+  // 清除离场类
+  setTimeout(() => {
+    outEl.classList.remove('leave-left');
+    outEl.style.transform = '';
+  }, 420);
+
+  currentPage = id;
+
+  // 更新导航高亮
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  // 相册页重置一次轮播
+  if (id === 'page-album') restartAlbum();
+};
+
+// 初始：主页显示底部文字
+footerText.classList.add('show');
+
+/* ──────────────────────────────────────────
+   4. 相册轮播
+───────────────────────────────────────────── */
+let albumCur = 0, albumTotal = 0, albumTimer = null;
+let albumBuilt = false;
+
+function restartAlbum() {
+  clearInterval(albumTimer);
+  albumTimer = setInterval(() => albumGoTo(albumCur + 1), 3500);
+}
+
+function albumGoTo(idx) {
+  albumCur = ((idx % albumTotal) + albumTotal) % albumTotal;
+  document.getElementById('sliderTrack').style.transform = `translateX(-${albumCur * 100}%)`;
+  document.querySelectorAll('.dot').forEach((d,i) =>
+    d.classList.toggle('active', i === albumCur));
+}
+
+window.changeSlide = function(dir) {
+  albumGoTo(albumCur + dir);
+  restartAlbum();
+};
+
+(function buildAlbum() {
+  const track  = document.getElementById('sliderTrack');
+  const dotBox = document.getElementById('dotContainer');
+
+  const photoList = [];
+  for (let i = 1; i <= 20; i++)
+    photoList.push({ src:`photos/pic${i}.jpg`, caption:`珍贵瞬间 ${i}` });
+
+  function checkImg(src) {
+    return new Promise(res => {
+      const img = new Image();
+      img.onload  = () => res(true);
+      img.onerror = () => res(false);
+      img.src = src;
+    });
+  }
+
+  (async function() {
+    const valid = [];
+    for (const p of photoList)
+      if (await checkImg(p.src)) valid.push(p);
+
+    if (!valid.length) {
+      valid.push(
+        {ph:true, icon:'🌸', text:'相册为空'},
+        {ph:true, icon:'💐', text:'支持 pic1.jpg、pic2.jpg…'},
+        {ph:true, icon:'📷', text:'刷新页面即可自动加载'}
+      );
+    }
+    albumTotal = valid.length;
+
+    valid.forEach((p, i) => {
+      const slide = document.createElement('div');
+      slide.className = 'slide';
+      slide.innerHTML = p.ph
+        ? `<div class="slide-placeholder"><span class="ph-icon">${p.icon}</span><span>${p.text}</span></div>`
+        : `<img src="${p.src}" alt="${p.caption}" loading="lazy"><div class="slide-caption">${p.caption}</div>`;
+      track.appendChild(slide);
+
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.onclick = () => { albumGoTo(i); restartAlbum(); };
+      dotBox.appendChild(dot);
+    });
+
+    albumGoTo(0);
+    restartAlbum();
+    albumBuilt = true;
+  })();
+})();
+
+/* ──────────────────────────────────────────
+   5. 爱心爆发
+───────────────────────────────────────────── */
+window.burstHearts = function(e) {
+  const cx = e.clientX, cy = e.clientY;
+  const icons = ['💖','💕','💗','💓','🌹','🌸','💝','✨'];
+  for (let i = 0; i < 18; i++) {
+    const el = document.createElement('span');
+    el.className = 'heart-burst';
+    el.textContent = icons[Math.floor(Math.random() * icons.length)];
+    const angle = Math.random() * Math.PI * 2;
+    const dist  = 80 + Math.random() * 140;
+    el.style.cssText = `
+      left:${cx}px; top:${cy}px;
+      --dx:${Math.cos(angle)*dist}px;
+      --dy:${Math.sin(angle)*dist-60}px;
+      animation-delay:${Math.random()*.3}s;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 1900);
+  }
+};
+</script>
+</body>
+</html>
